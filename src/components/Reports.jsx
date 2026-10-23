@@ -3,6 +3,24 @@ import { BarChart3, Download, TrendingUp, AlertCircle, CheckCircle2, Car } from 
 
 export default function Reports({ vehicles = [], services = [], expenses = [] }) {
   const totalSpent = expenses.reduce((sum, e) => sum + Number(e.cost || 0), 0);
+  const totalKm = vehicles.reduce((sum, v) => sum + Number(v.odometer_km || 0), 0);
+
+  const costPerKm = totalKm > 0 && totalSpent > 0 ? (totalSpent / totalKm).toFixed(2) : '0.00';
+
+  // Compute average fleet health
+  const healthIndex = vehicles.length > 0
+    ? Math.round(
+        vehicles.reduce((acc, v) => {
+          let score = 100;
+          const km = parseInt(v.odometer_km || 0);
+          if (km > 100000) score -= 15;
+          else if (km > 50000) score -= 8;
+          const age = Math.max(0, new Date().getFullYear() - (v.year || 2022));
+          score -= Math.min(20, age * 2);
+          return acc + Math.max(50, score);
+        }, 0) / vehicles.length
+      )
+    : 100;
 
   const exportCSV = () => {
     let csv = 'Type,Vehicle,Date,Description,Cost\n';
@@ -31,7 +49,7 @@ export default function Reports({ vehicles = [], services = [], expenses = [] })
             Maintenance expenditure trends, vehicle health degradation models, and audits.
           </p>
         </div>
-        <button className="primary-btn" onClick={exportCSV}>
+        <button className="primary-btn" onClick={exportCSV} disabled={services.length === 0 && expenses.length === 0}>
           <Download size={15} />
           <span>Export CSV Report</span>
         </button>
@@ -43,10 +61,10 @@ export default function Reports({ vehicles = [], services = [], expenses = [] })
             Average Cost Per KM
           </div>
           <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#38bdf8', fontFamily: 'var(--font-mono)' }}>
-            ₹0.42 / KM
+            ₹{costPerKm} / KM
           </div>
-          <div style={{ fontSize: '0.75rem', color: '#34d399', marginTop: '0.25rem' }}>
-            ● Highly cost-efficient maintenance
+          <div style={{ fontSize: '0.75rem', color: Number(costPerKm) < 1.0 ? '#34d399' : '#fbbf24', marginTop: '0.25rem' }}>
+            ● {Number(costPerKm) < 1.0 ? 'Highly cost-efficient maintenance' : 'Average operational expenditure'}
           </div>
         </div>
 
@@ -55,10 +73,10 @@ export default function Reports({ vehicles = [], services = [], expenses = [] })
             Fleet Health Index
           </div>
           <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#34d399', fontFamily: 'var(--font-mono)' }}>
-            91 / 100
+            {healthIndex} / 100
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-            Optimal mechanical status
+            {healthIndex >= 85 ? 'Optimal mechanical status' : 'Routine inspection advised'}
           </div>
         </div>
 
@@ -70,7 +88,7 @@ export default function Reports({ vehicles = [], services = [], expenses = [] })
             {services.length} Completed
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-            100% On-time compliance
+            {services.length > 0 ? 'Digital maintenance history' : 'No service records logged yet'}
           </div>
         </div>
       </div>
@@ -107,10 +125,17 @@ export default function Reports({ vehicles = [], services = [], expenses = [] })
                     <td>{Number(v.odometer_km || 0).toLocaleString()} KM</td>
                     <td>{vSrv} services</td>
                     <td className="cost-cell">₹{vExp.toLocaleString('en-IN')}</td>
-                    <td><span className="vehicle-badge-active">{v.status}</span></td>
+                    <td><span className="vehicle-badge-active">{v.status || 'Active'}</span></td>
                   </tr>
                 );
               })}
+              {vehicles.length === 0 && (
+                <tr>
+                  <td colSpan="7" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                    No vehicles found in your fleet.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

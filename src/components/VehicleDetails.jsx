@@ -47,7 +47,7 @@ export default function VehicleDetails({
         </div>
       </div>
 
-      {/* Vehicle Hero Card (Page 4 of Wireframe) */}
+      {/* Vehicle Hero Card */}
       <div
         className="panel-card"
         style={{
@@ -93,7 +93,7 @@ export default function VehicleDetails({
           </div>
         </div>
 
-        {/* 6 Key Spec Grid from Wireframe */}
+        {/* 6 Key Spec Grid */}
         <div
           style={{
             display: 'grid',
@@ -110,34 +110,34 @@ export default function VehicleDetails({
           </div>
           <div className="spec-item">
             <span className="spec-label">Year</span>
-            <span className="spec-val">{vehicle.year || 2020}</span>
+            <span className="spec-val">{vehicle.year || 2022}</span>
           </div>
           <div className="spec-item">
             <span className="spec-label">Registration</span>
-            <span className="spec-val">{vehicle.reg_date || '12 May 2020'}</span>
+            <span className="spec-val">{vehicle.reg_date || 'Not recorded'}</span>
           </div>
           <div className="spec-item">
             <span className="spec-label">Insurance</span>
-            <span className="spec-val" style={{ color: '#38bdf8' }}>
-              {vehicle.insurance_expiry || '10 Dec 2026'}
+            <span className="spec-val" style={{ color: vehicle.insurance_expiry ? '#38bdf8' : 'var(--text-muted)' }}>
+              {vehicle.insurance_expiry || 'Not set'}
             </span>
           </div>
           <div className="spec-item">
             <span className="spec-label">PUC Expiry</span>
-            <span className="spec-val" style={{ color: '#fbbf24' }}>
-              {vehicle.puc_expiry || '15 Aug 2026'}
+            <span className="spec-val" style={{ color: vehicle.puc_expiry ? '#fbbf24' : 'var(--text-muted)' }}>
+              {vehicle.puc_expiry || 'Not set'}
             </span>
           </div>
           <div className="spec-item">
             <span className="spec-label">Odometer (KM)</span>
             <span className="spec-val" style={{ color: '#34d399' }}>
-              {Number(vehicle.odometer_km || 58760).toLocaleString()} KM
+              {Number(vehicle.odometer_km || 0).toLocaleString()} KM
             </span>
           </div>
         </div>
       </div>
 
-      {/* 4 Quick Action Buttons (Page 4 of Wireframe) */}
+      {/* 4 Quick Action Buttons */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
         <button
           className="secondary-btn"
@@ -208,12 +208,12 @@ export default function VehicleDetails({
             </h4>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', background: 'rgba(15, 23, 42, 0.6)', borderRadius: '8px' }}>
               <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'rgba(16, 185, 129, 0.2)', color: '#34d399', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>
-                88%
+                {Math.max(60, 100 - Math.min(30, Math.floor((vehicle.odometer_km || 0) / 10000) * 2))}%
               </div>
               <div>
                 <div style={{ fontWeight: 600, color: '#fff' }}>Good Operational Condition</div>
                 <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                  All scheduled oil and filter services are up to date. Next service in ~2,500 KM.
+                  Current Odometer: {Number(vehicle.odometer_km || 0).toLocaleString()} KM. Regular periodic service advised every 10,000 KM.
                 </div>
               </div>
             </div>
@@ -226,15 +226,21 @@ export default function VehicleDetails({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
                 <span style={{ color: 'var(--text-muted)' }}>PUC Certificate:</span>
-                <span style={{ color: '#34d399', fontWeight: 600 }}>Valid (15 Aug 2026)</span>
+                <span style={{ color: vehicle.puc_expiry ? '#34d399' : 'var(--text-muted)', fontWeight: 600 }}>
+                  {vehicle.puc_expiry ? `Valid (${vehicle.puc_expiry})` : 'Pending Certificate'}
+                </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
                 <span style={{ color: 'var(--text-muted)' }}>Comprehensive Insurance:</span>
-                <span style={{ color: '#38bdf8', fontWeight: 600 }}>Active (10 Dec 2026)</span>
+                <span style={{ color: vehicle.insurance_expiry ? '#38bdf8' : 'var(--text-muted)', fontWeight: 600 }}>
+                  {vehicle.insurance_expiry ? `Active (${vehicle.insurance_expiry})` : 'Pending Policy'}
+                </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
                 <span style={{ color: 'var(--text-muted)' }}>Fitness Validity:</span>
-                <span style={{ color: '#fff', fontWeight: 600 }}>Valid until 2035</span>
+                <span style={{ color: '#fff', fontWeight: 600 }}>
+                  Valid until {(vehicle.year || 2022) + 15}
+                </span>
               </div>
             </div>
           </div>
@@ -271,6 +277,13 @@ export default function VehicleDetails({
                     <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{s.notes || '-'}</td>
                   </tr>
                 ))}
+                {vehicleServices.length === 0 && (
+                  <tr>
+                    <td colSpan="5" style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-muted)' }}>
+                      No service records logged for this vehicle yet.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -305,6 +318,13 @@ export default function VehicleDetails({
                     <td className="cost-cell">₹{Number(e.cost || 0).toLocaleString('en-IN')}</td>
                   </tr>
                 ))}
+                {vehicleExpenses.length === 0 && (
+                  <tr>
+                    <td colSpan="4" style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-muted)' }}>
+                      No expenses logged for this vehicle yet.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -320,17 +340,23 @@ export default function VehicleDetails({
             <div style={{ padding: '1rem', background: 'rgba(15, 23, 42, 0.6)', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
               <FileText size={20} style={{ color: '#38bdf8', marginBottom: '0.5rem' }} />
               <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>RC Certificate</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>PDF • Verified Govt copy</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                Reg: {vehicle.reg_number} • {vehicle.fuel_type || 'Diesel'}
+              </div>
             </div>
             <div style={{ padding: '1rem', background: 'rgba(15, 23, 42, 0.6)', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
               <Shield size={20} style={{ color: '#34d399', marginBottom: '0.5rem' }} />
               <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>Insurance Policy</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>PDF • Policy No: POL-2026-9009</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                {vehicle.insurance_expiry ? `Valid till ${vehicle.insurance_expiry}` : 'No insurance policy recorded'}
+              </div>
             </div>
             <div style={{ padding: '1rem', background: 'rgba(15, 23, 42, 0.6)', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
               <Calendar size={20} style={{ color: '#fbbf24', marginBottom: '0.5rem' }} />
               <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>PUC Certificate</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>PDF • Valid till 15 Aug 2026</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                {vehicle.puc_expiry ? `Valid till ${vehicle.puc_expiry}` : 'No PUC certificate recorded'}
+              </div>
             </div>
           </div>
         </div>

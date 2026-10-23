@@ -50,7 +50,7 @@ export default function Expenses({ expenses = [], vehicles = [], onAddExpense, o
         </button>
       </div>
 
-      {/* 3 Summary Cards from Page 5 of Wireframe */}
+      {/* 3 Summary Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.25rem', marginBottom: '1.5rem' }}>
         <div className="panel-card" style={{ marginBottom: 0 }}>
           <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.4rem' }}>
@@ -60,7 +60,7 @@ export default function Expenses({ expenses = [], vehicles = [], onAddExpense, o
             ₹{total.toLocaleString('en-IN')}
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-            All-time fleet cumulative
+            {expenses.length > 0 ? `Across ${expenses.length} transaction entries` : 'No expenses recorded yet'}
           </div>
         </div>
 
@@ -69,7 +69,7 @@ export default function Expenses({ expenses = [], vehicles = [], onAddExpense, o
             This Month
           </div>
           <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#60a5fa', fontFamily: 'var(--font-mono)' }}>
-            ₹{(thisMonth || 3250).toLocaleString('en-IN')}
+            ₹{thisMonth.toLocaleString('en-IN')}
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
             Current billing cycle
@@ -84,14 +84,14 @@ export default function Expenses({ expenses = [], vehicles = [], onAddExpense, o
             ₹{total.toLocaleString('en-IN')}
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-            Calendar year 2026
+            Calendar year {new Date().getFullYear()}
           </div>
         </div>
       </div>
 
       {/* Two Column: Category Breakdown + Recent Expenses List */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-        {/* Expenses by Category (Page 5) */}
+        {/* Expenses by Category */}
         <div className="panel-card">
           <div className="panel-header">
             <div className="panel-title">
@@ -124,10 +124,11 @@ export default function Expenses({ expenses = [], vehicles = [], onAddExpense, o
                 <div style={{ width: '100%', height: '8px', background: 'rgba(255, 255, 255, 0.08)', borderRadius: '9999px', overflow: 'hidden' }}>
                   <div
                     style={{
-                      width: `${Math.max(5, cat.pct)}%`,
+                      width: `${cat.pct}%`,
                       height: '100%',
                       background: catColors[cat.name] || '#3b82f6',
                       borderRadius: '9999px',
+                      transition: 'width 0.3s ease',
                     }}
                   />
                 </div>
@@ -136,7 +137,7 @@ export default function Expenses({ expenses = [], vehicles = [], onAddExpense, o
           </div>
         </div>
 
-        {/* Recent Expenses List (Page 5) */}
+        {/* Recent Expenses List */}
         <div className="panel-card">
           <div className="panel-header">
             <div className="panel-title">
@@ -182,6 +183,12 @@ export default function Expenses({ expenses = [], vehicles = [], onAddExpense, o
                 </div>
               </div>
             ))}
+
+            {filtered.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', fontSize: '0.88rem' }}>
+                No expenses found. Click "+ Add Expense" to record maintenance or fuel bills.
+              </div>
+            )}
           </div>
         </div>
       </div>
