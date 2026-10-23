@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, Plus, Cloud, HardDrive, Bell } from 'lucide-react';
+import { Clock, Plus, Cloud, HardDrive, Bell, User, LogOut, LogIn } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
-export default function Topbar({ title, isCloud, onAddVehicle, onAddService, onOpenAuth, onTabChange }) {
+export default function Topbar({ title, onAddVehicle, onAddService, onOpenAuth, onTabChange }) {
+  const { user, logout } = useAuth();
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
 
   useEffect(() => {
@@ -46,25 +48,49 @@ export default function Topbar({ title, isCloud, onAddVehicle, onAddService, onO
       </div>
 
       <div className="topbar-right">
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-            fontSize: '0.75rem',
-            padding: '0.35rem 0.65rem',
-            borderRadius: '9999px',
-            background: isCloud ? 'rgba(16, 185, 129, 0.15)' : 'rgba(148, 163, 184, 0.15)',
-            color: isCloud ? '#34d399' : '#94a3b8',
-            border: `1px solid ${isCloud ? 'rgba(16, 185, 129, 0.3)' : 'rgba(148, 163, 184, 0.2)'}`,
-            cursor: isCloud ? 'default' : 'pointer',
-          }}
-          onClick={!isCloud ? onOpenAuth : undefined}
-          title={isCloud ? 'Synced with Supabase Cloud' : 'Click to connect Cloud Supabase account'}
-        >
-          {isCloud ? <Cloud size={13} /> : <HardDrive size={13} />}
-          <span>{isCloud ? 'Supabase Connected' : 'Guest Mode (Local)'}</span>
-        </div>
+        {/* User Session Indicator */}
+        {user ? (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              fontSize: '0.78rem',
+              padding: '0.35rem 0.75rem',
+              borderRadius: '9999px',
+              background: 'rgba(16, 185, 129, 0.12)',
+              color: '#34d399',
+              border: '1px solid rgba(16, 185, 129, 0.25)',
+            }}
+          >
+            <User size={13} />
+            <span style={{ fontWeight: 600 }}>{user.name || user.email}</span>
+            <button
+              onClick={logout}
+              title="Logout Session"
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#fb7185',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                padding: '0 2px',
+              }}
+            >
+              <LogOut size={13} />
+            </button>
+          </div>
+        ) : (
+          <button
+            className="secondary-btn"
+            style={{ padding: '0.4rem 0.85rem', fontSize: '0.8rem', borderColor: 'rgba(59, 130, 246, 0.4)', color: '#93c5fd' }}
+            onClick={onOpenAuth}
+          >
+            <LogIn size={14} />
+            <span>Login / Register</span>
+          </button>
+        )}
 
         <button
           className="secondary-btn"

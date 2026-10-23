@@ -9,9 +9,13 @@ import {
   User,
   LogOut,
   Sparkles,
+  LogIn,
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
-export default function Sidebar({ activeTab, setActiveTab, remindersCount = 0, user, onSignOut, onOpenAuth }) {
+export default function Sidebar({ activeTab, setActiveTab, remindersCount = 0, onOpenAuth }) {
+  const { user, logout } = useAuth();
+
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'vehicles', label: 'My Vehicles', icon: Car },
@@ -56,32 +60,32 @@ export default function Sidebar({ activeTab, setActiveTab, remindersCount = 0, u
       <div className="sidebar-footer">
         <div className="user-mini-card">
           <div className="user-avatar">
-            {user?.name ? user.name.charAt(0) : 'A'}
+            {user?.name ? user.name.charAt(0).toUpperCase() : 'G'}
           </div>
           <div className="user-details">
-            <div className="user-name">{user?.name || 'Ale Sathwik Netha'}</div>
+            <div className="user-name">{user?.name || 'Guest User'}</div>
             <div className="user-status">
-              <span className="status-dot"></span>
-              <span>{user?.isCloud ? 'Cloud Synced' : 'Guest Mode'}</span>
+              <span className="status-dot" style={{ backgroundColor: user ? '#10b981' : '#94a3b8' }}></span>
+              <span>{user ? 'Session Active' : 'Not Logged In'}</span>
             </div>
           </div>
-          {user?.isCloud ? (
+          {user ? (
             <button
               className="icon-btn"
-              title="Sign Out"
-              style={{ width: '32px', height: '32px' }}
-              onClick={onSignOut}
+              title="Logout Session"
+              style={{ width: '32px', height: '32px', color: '#fb7185' }}
+              onClick={logout}
             >
               <LogOut size={14} />
             </button>
           ) : (
             <button
               className="icon-btn"
-              title="Sign In"
+              title="Sign In / Register"
               style={{ width: '32px', height: '32px', color: '#60a5fa' }}
               onClick={onOpenAuth}
             >
-              <User size={14} />
+              <LogIn size={14} />
             </button>
           )}
         </div>

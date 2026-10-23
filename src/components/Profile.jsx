@@ -1,55 +1,81 @@
-import React, { useState } from 'react';
-import { User, Mail, Phone, MapPin, Save, Check, Shield, Layers } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { User, Mail, Phone, MapPin, Save, Check, Shield, Layers, LogOut } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
-export default function Profile({ profile, onUpdateProfile }) {
+export default function Profile() {
+  const { user, token, updateProfile, logout } = useAuth();
+
   const [formData, setFormData] = useState({
-    full_name: profile?.full_name || 'Ale Sathwik Netha',
-    email: profile?.email || 'sathwikale@gmail.com',
-    phone: profile?.phone || '9000848123',
-    address: profile?.address || '16-2-112/2/C Old City, Hyderabad',
+    name: user?.name || 'Ale Sathwik Netha',
+    email: user?.email || 'sathwikale@gmail.com',
+    phone: user?.phone || '9000848123',
+    address: user?.address || '16-2-112/2/C Old City, Hyderabad',
   });
   const [saved, setSaved] = useState(false);
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        address: user.address || '',
+      });
+    }
+  }, [user]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onUpdateProfile(formData);
+    await updateProfile(formData);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };
 
   const modules = [
-    '1. User Authentication (Email/Password & Supabase RLS)',
-    '2. Vehicle Management (Fleet inventory & registration details)',
-    '3. Service History Management (Digital logs, odometer tracking, cost tallies)',
-    '4. Expense Tracking (Fuel, repairs, parts, categorization & charts)',
-    '5. Insurance & Document Management (PUC, RC, policy renewals)',
-    '6. Reminder Management (Real-time countdown alerts)',
-    '7. Reports & Analytics (Mileage health, expense exports, audits)',
-    '8. User Profile & Settings',
-    '9. Admin Dashboard (Fleet metrics, KPI summaries, live clock)',
-    '10. AI Assistant & Diagnostics (Predictive maintenance engine)',
+    '1. User Authentication & Session Continuation (SQLite & Supabase RLS)',
+    '2. User-Scoped Vehicle Fleet Management',
+    '3. Service History Ledger & Odometer Tracking',
+    '4. Expense Tracking & Financial Categorization',
+    '5. Insurance & Document Vault (PUC, RC, policies)',
+    '6. Reminder Management with Countdown Badges',
+    '7. Reports, Analytics & One-Click CSV Export',
+    '8. Real-Time IST Date & Time Digital Clock',
+    '9. AI Vehicle Diagnostic Assistant Column',
+    '10. Session Security & Session Invalidation on Logout',
   ];
 
   return (
     <div>
-      <div style={{ marginBottom: '1.5rem' }}>
-        <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Profile & Settings</h2>
-        <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-          Manage your account profile details and review system architecture modules.
-        </p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+        <div>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Profile & Account Sessions</h2>
+          <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+            Manage your account credentials, view session metadata, and update personal details.
+          </p>
+        </div>
+        {user && (
+          <button
+            className="secondary-btn"
+            style={{ borderColor: 'rgba(244, 63, 94, 0.4)', color: '#fb7185' }}
+            onClick={logout}
+          >
+            <LogOut size={15} />
+            <span>End Session (Logout)</span>
+          </button>
+        )}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-        {/* Profile Information Form (Page 6 of Wireframe) */}
+        {/* Profile Information Form */}
         <div className="panel-card">
           <div className="panel-header">
             <div className="panel-title">
               <User size={18} style={{ color: '#60a5fa' }} />
-              <span>Profile Information</span>
+              <span>User Information</span>
             </div>
             {saved && (
               <span style={{ fontSize: '0.78rem', color: '#34d399', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                <Check size={14} /> Saved Successfully
+                <Check size={14} /> Profile Saved
               </span>
             )}
           </div>
@@ -71,17 +97,15 @@ export default function Profile({ profile, onUpdateProfile }) {
                   boxShadow: '0 0 15px rgba(59, 130, 246, 0.4)',
                 }}
               >
-                {formData.full_name.charAt(0)}
+                {formData.name ? formData.name.charAt(0).toUpperCase() : 'U'}
               </div>
               <div>
-                <button
-                  type="button"
-                  className="secondary-btn"
-                  style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem' }}
-                  onClick={() => alert('Profile avatar updated')}
-                >
-                  Change Photo
-                </button>
+                <div style={{ fontWeight: 700, color: '#fff', fontSize: '1rem' }}>
+                  {formData.name || 'Account User'}
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                  User ID: {user?.id || 'guest'}
+                </div>
               </div>
             </div>
 
@@ -90,8 +114,8 @@ export default function Profile({ profile, onUpdateProfile }) {
               <input
                 type="text"
                 className="form-input"
-                value={formData.full_name}
-                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
               />
             </div>
@@ -102,8 +126,8 @@ export default function Profile({ profile, onUpdateProfile }) {
                 type="email"
                 className="form-input"
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                required
+                disabled
+                style={{ opacity: 0.7, cursor: 'not-allowed' }}
               />
             </div>
 
@@ -114,7 +138,6 @@ export default function Profile({ profile, onUpdateProfile }) {
                 className="form-input"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                required
               />
             </div>
 
@@ -135,14 +158,32 @@ export default function Profile({ profile, onUpdateProfile }) {
           </form>
         </div>
 
-        {/* System Modules (Page 6 of Wireframe) */}
+        {/* System & Session Modules */}
         <div className="panel-card">
           <div className="panel-header">
             <div className="panel-title">
               <Layers size={18} style={{ color: '#38bdf8' }} />
-              <span>Implemented Architecture Modules</span>
+              <span>Session Architecture & Database</span>
             </div>
-            <span className="vehicle-badge-active">10 / 10 Live</span>
+            <span className="vehicle-badge-active">Active</span>
+          </div>
+
+          <div
+            style={{
+              padding: '0.85rem',
+              background: 'rgba(59, 130, 246, 0.08)',
+              border: '1px solid rgba(59, 130, 246, 0.25)',
+              borderRadius: '8px',
+              marginBottom: '1rem',
+              fontSize: '0.8rem',
+            }}
+          >
+            <div style={{ fontWeight: 600, color: '#93c5fd', marginBottom: '0.3rem' }}>
+              🔒 Session & Data Isolation Status
+            </div>
+            <div style={{ color: '#cbd5e1', lineHeight: 1.4 }}>
+              All records (vehicles, service visits, expenses, reminders) are indexed strictly under your authenticated User ID. Logging out invalidates the session token, and logging in restores your private dataset across reloads.
+            </div>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
@@ -153,7 +194,7 @@ export default function Profile({ profile, onUpdateProfile }) {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.65rem',
-                  padding: '0.65rem 0.85rem',
+                  padding: '0.6rem 0.85rem',
                   background: 'rgba(15, 23, 42, 0.5)',
                   border: '1px solid var(--border-color)',
                   borderRadius: '6px',

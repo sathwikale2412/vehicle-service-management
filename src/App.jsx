@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { dbService } from './db/database';
 import Sidebar from './components/Sidebar';
 import Topbar from './components/Topbar';
 import Dashboard from './components/Dashboard';
@@ -17,56 +19,19 @@ import {
   AddExpenseModal,
   AddReminderModal,
 } from './components/Modals';
-import {
-  initialVehicles,
-  initialServices,
-  initialExpenses,
-  initialReminders,
-  initialProfile,
-} from './lib/initialData';
-import { supabase, isSupabaseConfigured } from './lib/supabase';
+import { LogIn, Sparkles, Car, Shield, CheckCircle } from 'lucide-react';
 
-export default function App() {
+function MainApp() {
+  const { user, token, loading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedVehicle, setSelectedVehicle] = useState(null);
 
-  // Data state with localStorage persistence
-  const [vehicles, setVehicles] = useState(() => {
-    const saved = localStorage.getItem('vsrms_vehicles');
-    return saved ? JSON.parse(saved) : initialVehicles;
-  });
-
-  const [services, setServices] = useState(() => {
-    const saved = localStorage.getItem('vsrms_services');
-    return saved ? JSON.parse(saved) : initialServices;
-  });
-
-  const [expenses, setExpenses] = useState(() => {
-    const saved = localStorage.getItem('vsrms_expenses');
-    return saved ? JSON.parse(saved) : initialExpenses;
-  });
-
-  const [reminders, setReminders] = useState(() => {
-    const saved = localStorage.getItem('vsrms_reminders');
-    return saved ? JSON.parse(saved) : initialReminders;
-  });
-
-  const [profile, setProfile] = useState(() => {
-    const saved = localStorage.getItem('vsrms_profile');
-    return saved ? JSON.parse(saved) : initialProfile;
-  });
-
-  const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('vsrms_user');
-    return saved
-      ? JSON.parse(saved)
-      : {
-          name: 'Ale Sathwik Netha',
-          email: 'sathwikale@gmail.com',
-          isCloud: false,
-          id: 'local-user-1',
-        };
-  });
+  // User-scoped data states
+  const [vehicles, setVehicles] = useState([]);
+  const [services, setServices] = useState([]);
+  const [expenses, setExpenses] = useState([]);
+  const [reminders, setReminders] = useState([]);
+  const [dataLoading, setDataLoading] = useState(true);
 
   // Modal states
   const [modalVehicleId, setModalVehicleId] = useState(null);
@@ -76,69 +41,59 @@ export default function App() {
   const [isAddReminderOpen, setIsAddReminderOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
-  // Sync to local storage
+  // Load and hydrate user-scoped data whenever active user session changes
   useEffect(() => {
-    localStorage.setItem('vsrms_vehicles', JSON.stringify(vehicles));
-  }, [vehicles]);
-
-  useEffect(() => {
-    localStorage.setItem('vsrms_services', JSON.stringify(services));
-  }, [services]);
-
-  useEffect(() => {
-    localStorage.setItem('vsrms_expenses', JSON.stringify(expenses));
-  }, [expenses]);
-
-  useEffect(() => {
-    localStorage.setItem('vsrms_reminders', JSON.stringify(reminders));
-  }, [reminders]);
-
-  useEffect(() => {
-    localStorage.setItem('vsrms_profile', JSON.stringify(profile));
-  }, [profile]);
-
-  useEffect(() => {
-    localStorage.setItem('vsrms_user', JSON.stringify(user));
-  }, [user]);
-
-  // Cloud Supabase sync if logged in with Cloud
-  useEffect(() => {
-    if (isSupabaseConfigured && supabase && user?.isCloud) {
-      loadCloudData();
+    async function loadData() {
+      setDataLoading(true);
+      if (user) {
+        const data = await dbService.getUserData(user.id, token);
+        setVehicles(data.vehicles || []);
+        setServices(data.services || []);
+        setExpenses(data.expenses || []);
+        setReminders(data.reminders || []);
+      } else {
+        // Fallback demo/guest view
+        const data = await dbService.getUserData('usr-sathwik-default', '');
+        setVehicles(data.vehicles || []);
+        setServices(data.services || []);
+        setExpenses(data.expenses || []);
+        setReminders(data.reminders || []);
+      }
+      setDataLoading(false);
     }
-  }, [user]);
+    loadData();
+  }, [user, token]);
 
-  const loadCloudData = async () => {
-    try {
-      const { data: vData } = await supabase.from('vsrms_vehicles').select('*');
-      if (vData && vData.length > 0) setVehicles(vData);
-
-      const { data: sData } = await supabase.from('vsrms_service_records').select('*');
-      if (sData && sData.length > 0) setServices(sData);
-
-      const { data: eData } = await supabase.from('vsrms_expenses').select('*');
-      if (eData && eData.length > 0) setExpenses(eData);
-
-      const { data: rData } = await supabase.from('vsrms_reminders').select('*');
-      if (rData && rData.length > 0) setReminders(rData);
-    } catch (err) {
-      console.warn('Cloud sync error:', err);
-    }
+  // Persist changes to user-scoped storage & backend
+  const updateUserData = (newVehicles, newServices, newExpenses, newReminders) => {
+    const userId = user?.id || 'usr-sathwik-default';
+    dbService.saveLocalUserData(userId, {
+      vehicles: newVehicles,
+      services: newServices,
+      expenses: newExpenses,
+      reminders: newReminders,
+    });
   };
 
-  // Handlers for Add/Delete operations
-  const handleAddVehicle = (newVeh) => {
-    setVehicles((prev) => [newVeh, ...prev]);
+  const handleAddVehicle = async (newVeh) => {
+    const updated = [newVeh, ...vehicles];
+    setVehicles(updated);
+    updateUserData(updated, services, expenses, reminders);
+    if (user) await dbService.addVehicle(user.id, newVeh, token);
   };
 
-  const handleDeleteVehicle = (id) => {
-    setVehicles((prev) => prev.filter((v) => v.id !== id));
+  const handleDeleteVehicle = async (id) => {
+    const updated = vehicles.filter((v) => v.id !== id);
+    setVehicles(updated);
+    updateUserData(updated, services, expenses, reminders);
     if (selectedVehicle?.id === id) setSelectedVehicle(null);
+    if (user) await dbService.deleteVehicle(user.id, id, token);
   };
 
-  const handleAddService = (newSrv) => {
-    setServices((prev) => [newSrv, ...prev]);
-    // Also log automatic corresponding expense
+  const handleAddService = async (newSrv) => {
+    const updatedSrv = [newSrv, ...services];
+    setServices(updatedSrv);
+
     const newExp = {
       id: `exp-${Date.now()}`,
       vehicle_id: newSrv.vehicle_id,
@@ -148,44 +103,51 @@ export default function App() {
       expense_date: newSrv.service_date,
       cost: newSrv.cost,
     };
-    setExpenses((prev) => [newExp, ...prev]);
+    const updatedExp = [newExp, ...expenses];
+    setExpenses(updatedExp);
+
+    updateUserData(vehicles, updatedSrv, updatedExp, reminders);
+    if (user) {
+      await dbService.addService(user.id, newSrv, token);
+      await dbService.addExpense(user.id, newExp, token);
+    }
   };
 
-  const handleDeleteService = (id) => {
-    setServices((prev) => prev.filter((s) => s.id !== id));
+  const handleDeleteService = async (id) => {
+    const updated = services.filter((s) => s.id !== id);
+    setServices(updated);
+    updateUserData(vehicles, updated, expenses, reminders);
+    if (user) await dbService.deleteService(user.id, id, token);
   };
 
-  const handleAddExpense = (newExp) => {
-    setExpenses((prev) => [newExp, ...prev]);
+  const handleAddExpense = async (newExp) => {
+    const updated = [newExp, ...expenses];
+    setExpenses(updated);
+    updateUserData(vehicles, services, updated, reminders);
+    if (user) await dbService.addExpense(user.id, newExp, token);
   };
 
-  const handleDeleteExpense = (id) => {
-    setExpenses((prev) => prev.filter((e) => e.id !== id));
+  const handleDeleteExpense = async (id) => {
+    const updated = expenses.filter((e) => e.id !== id);
+    setExpenses(updated);
+    updateUserData(vehicles, services, updated, reminders);
+    if (user) await dbService.deleteExpense(user.id, id, token);
   };
 
-  const handleAddReminder = (newRem) => {
-    setReminders((prev) => [newRem, ...prev]);
+  const handleAddReminder = async (newRem) => {
+    const updated = [newRem, ...reminders];
+    setReminders(updated);
+    updateUserData(vehicles, services, expenses, updated);
+    if (user) await dbService.addReminder(user.id, newRem, token);
   };
 
-  const handleDeleteReminder = (id) => {
-    setReminders((prev) => prev.filter((r) => r.id !== id));
+  const handleDeleteReminder = async (id) => {
+    const updated = reminders.filter((r) => r.id !== id);
+    setReminders(updated);
+    updateUserData(vehicles, services, expenses, updated);
+    if (user) await dbService.deleteReminder(user.id, id, token);
   };
 
-  const handleUpdateProfile = (updatedProfile) => {
-    setProfile(updatedProfile);
-    setUser((prev) => ({ ...prev, name: updatedProfile.full_name, email: updatedProfile.email }));
-  };
-
-  const handleSignOut = () => {
-    setUser({
-      name: 'Guest User',
-      email: 'guest@vsrms.local',
-      isCloud: false,
-      id: 'guest',
-    });
-  };
-
-  // Page title mapping
   const getPageTitle = () => {
     if (selectedVehicle) return `Vehicle Details: ${selectedVehicle.name}`;
     switch (activeTab) {
@@ -210,6 +172,17 @@ export default function App() {
     }
   };
 
+  if (authLoading) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0b0f19', color: '#fff' }}>
+        <div style={{ textAlign: 'center' }}>
+          <Car size={36} style={{ color: '#3b82f6', marginBottom: '1rem', animation: 'spin 2s linear infinite' }} />
+          <div>Restoring User Session & Fleet Telematics...</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="app-container">
       {/* Sidebar Navigation */}
@@ -220,16 +193,13 @@ export default function App() {
           setActiveTab(tab);
         }}
         remindersCount={reminders.length}
-        user={user}
-        onSignOut={handleSignOut}
         onOpenAuth={() => setIsAuthOpen(true)}
       />
 
-      {/* Main Wrapper */}
+      {/* Main Content Area */}
       <div className="main-wrapper">
         <Topbar
           title={getPageTitle()}
-          isCloud={user?.isCloud}
           onAddVehicle={() => setIsAddVehicleOpen(true)}
           onAddService={() => {
             setModalVehicleId(null);
@@ -243,6 +213,37 @@ export default function App() {
         />
 
         <main className="content-area">
+          {/* Guest notification banner if not authenticated */}
+          {!user && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0.85rem 1.25rem',
+                background: 'linear-gradient(90deg, rgba(59, 130, 246, 0.15) 0%, rgba(14, 165, 233, 0.1) 100%)',
+                border: '1px solid rgba(59, 130, 246, 0.3)',
+                borderRadius: '10px',
+                marginBottom: '1.5rem',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <Shield size={18} style={{ color: '#38bdf8' }} />
+                <span style={{ fontSize: '0.85rem', color: '#e2e8f0' }}>
+                  Viewing in <strong>Guest Demo Mode</strong>. Login or register to create isolated personal sessions and store custom vehicles.
+                </span>
+              </div>
+              <button
+                className="primary-btn"
+                style={{ padding: '0.4rem 0.85rem', fontSize: '0.8rem' }}
+                onClick={() => setIsAuthOpen(true)}
+              >
+                <LogIn size={13} />
+                <span>Login / Register</span>
+              </button>
+            </div>
+          )}
+
           {selectedVehicle ? (
             <VehicleDetails
               vehicle={selectedVehicle}
@@ -344,12 +345,7 @@ export default function App() {
                 </div>
               )}
 
-              {activeTab === 'profile' && (
-                <Profile
-                  profile={profile}
-                  onUpdateProfile={handleUpdateProfile}
-                />
-              )}
+              {activeTab === 'profile' && <Profile />}
             </>
           )}
         </main>
@@ -389,8 +385,15 @@ export default function App() {
       <AuthModal
         isOpen={isAuthOpen}
         onClose={() => setIsAuthOpen(false)}
-        onAuthSuccess={(userData) => setUser(userData)}
       />
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <MainApp />
+    </AuthProvider>
   );
 }

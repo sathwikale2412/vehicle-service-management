@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
-import { X, Lock, Mail, Car, Check, Shield } from 'lucide-react';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { X, Lock, Mail, Car, Check, User, Phone, MapPin } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
-export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
+export default function AuthModal({ isOpen, onClose }) {
+  const { login, register } = useAuth();
   const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -17,65 +21,46 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
     setLoading(true);
 
     try {
-      if (isSupabaseConfigured && supabase) {
-        if (isRegister) {
-          const { data, error } = await supabase.auth.signUp({ email, password });
-          if (error) throw error;
-          onAuthSuccess({
-            name: email.split('@')[0],
-            email: email,
-            isCloud: true,
-            id: data.user?.id,
-          });
-        } else {
-          const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-          if (error) throw error;
-          onAuthSuccess({
-            name: email.split('@')[0],
-            email: email,
-            isCloud: true,
-            id: data.user?.id,
-          });
-        }
+      if (isRegister) {
+        await register({ email, password, name, phone, address });
       } else {
-        // Local Sandbox Mode
-        onAuthSuccess({
-          name: email.split('@')[0] || 'Ale Sathwik Netha',
-          email: email || 'sathwikale@gmail.com',
-          isCloud: false,
-          id: 'local-user-1',
-        });
+        await login(email, password);
       }
       onClose();
     } catch (err) {
-      setErrorMsg(err.message || 'Authentication failed. Please check credentials.');
+      setErrorMsg(err.message || 'Authentication failed. Please verify your credentials.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSandboxLogin = () => {
-    onAuthSuccess({
-      name: 'Ale Sathwik Netha',
-      email: 'sathwikale@gmail.com',
-      isCloud: false,
-      id: 'local-user-1',
-    });
-    onClose();
+  const handleDemoLogin = async () => {
+    setErrorMsg('');
+    setLoading(true);
+    try {
+      await login('sathwikale@gmail.com', 'Password123');
+      onClose();
+    } catch (err) {
+      setErrorMsg(err.message || 'Demo login failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '420px' }}>
+      <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '440px' }}>
         <div className="modal-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
             <div className="logo-badge" style={{ width: '32px', height: '32px' }}>
               <Car size={18} />
             </div>
             <div>
-              <div style={{ fontSize: '0.9rem', fontWeight: 700 }}>VSRMS Account</div>
+              <div style={{ fontSize: '0.92rem', fontWeight: 700 }}>
+                {isRegister ? 'Create VSRMS Account' : 'Welcome Back! Login to VSRMS'}
+              </div>
               <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                {isRegister ? 'Register your account' : 'Welcome back! Login to your account'}
+                {isRegister ? 'Store & sync your vehicle maintenance history' : 'Access your personalized fleet and service records'}
               </div>
             </div>
           </div>
@@ -87,6 +72,24 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
             {errorMsg && (
               <div style={{ padding: '0.65rem', background: 'rgba(244, 63, 94, 0.15)', border: '1px solid rgba(244, 63, 94, 0.3)', borderRadius: '6px', color: '#fb7185', fontSize: '0.8rem' }}>
                 {errorMsg}
+              </div>
+            )}
+
+            {isRegister && (
+              <div className="form-group">
+                <label className="form-label">Full Name</label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="text"
+                    className="form-input"
+                    style={{ width: '100%', paddingLeft: '2.2rem' }}
+                    placeholder="e.g. Ale Sathwik Netha"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                  />
+                  <User size={15} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                </div>
               </div>
             )}
 
@@ -122,46 +125,73 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
               </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.78rem' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
-                <input type="checkbox" defaultChecked /> Remember me
-              </label>
-              <button
-                type="button"
-                style={{ background: 'none', border: 'none', color: '#60a5fa', cursor: 'pointer', fontSize: '0.78rem' }}
-                onClick={() => alert('Password reset link sent to registered email.')}
-              >
-                Forgot Password?
-              </button>
-            </div>
+            {isRegister && (
+              <>
+                <div className="form-group">
+                  <label className="form-label">Phone Number (Optional)</label>
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type="tel"
+                      className="form-input"
+                      style={{ width: '100%', paddingLeft: '2.2rem' }}
+                      placeholder="9000848123"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                    />
+                    <Phone size={15} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Address (Optional)</label>
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type="text"
+                      className="form-input"
+                      style={{ width: '100%', paddingLeft: '2.2rem' }}
+                      placeholder="16-2-112/2/C Old City, Hyderabad"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                    />
+                    <MapPin size={15} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                  </div>
+                </div>
+              </>
+            )}
 
             <button
               type="submit"
               className="primary-btn"
-              style={{ width: '100%', justifyContent: 'center', marginTop: '0.5rem', padding: '0.75rem' }}
+              style={{ width: '100%', justifyContent: 'center', marginTop: '0.4rem', padding: '0.75rem' }}
               disabled={loading}
             >
-              {loading ? 'Authenticating...' : isRegister ? 'Create Account' : 'Login'}
+              {loading ? 'Processing...' : isRegister ? 'Create Account & Start Session' : 'Login to Account'}
             </button>
 
-            <button
-              type="button"
-              className="secondary-btn"
-              style={{ width: '100%', justifyContent: 'center', fontSize: '0.8rem' }}
-              onClick={handleSandboxLogin}
-            >
-              <span>Instant Guest Mode (Preloaded Fleet)</span>
-            </button>
+            {!isRegister && (
+              <button
+                type="button"
+                className="secondary-btn"
+                style={{ width: '100%', justifyContent: 'center', fontSize: '0.82rem', borderColor: 'rgba(59, 130, 246, 0.3)', color: '#93c5fd' }}
+                onClick={handleDemoLogin}
+                disabled={loading}
+              >
+                <span>One-Click Login (Ale Sathwik Netha)</span>
+              </button>
+            )}
           </div>
 
-          <div className="modal-footer" style={{ justifyContent: 'center', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+          <div className="modal-footer" style={{ justifyContent: 'center', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
             {isRegister ? 'Already have an account?' : "Don't have an account?"}{' '}
             <button
               type="button"
               style={{ background: 'none', border: 'none', color: '#60a5fa', fontWeight: 600, cursor: 'pointer', marginLeft: '4px' }}
-              onClick={() => setIsRegister(!isRegister)}
+              onClick={() => {
+                setIsRegister(!isRegister);
+                setErrorMsg('');
+              }}
             >
-              {isRegister ? 'Login' : 'Register'}
+              {isRegister ? 'Login' : 'Register Here'}
             </button>
           </div>
         </form>
