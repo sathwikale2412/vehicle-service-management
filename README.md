@@ -2,6 +2,9 @@
 
 A web application designed to track, manage, and predict automotive maintenance, service histories, expense distributions, and compliance document renewals for personal and fleet vehicles.
 
+- 🌐 **Live Production URL:** [https://vehicle-service-management-pink.vercel.app](https://vehicle-service-management-pink.vercel.app)
+- 📦 **GitHub Repository:** [https://github.com/sathwikale2412/vehicle-service-management](https://github.com/sathwikale2412/vehicle-service-management)
+
 Built from the ground up based on the architectural wireframes in `New Doc 10-23-2026 02.46.pdf`, featuring an integrated **AI Vehicle Diagnostic Assistant Column**, **Live Real-Time Date & Time Clock**, and **Row Level Security (RLS)** cloud synchronization.
 
 ---
