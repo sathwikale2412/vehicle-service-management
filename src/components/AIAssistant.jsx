@@ -82,7 +82,7 @@ export default function AIAssistant({ vehicles, services, expenses, reminders })
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: msg,
-          context: { vehiclesCount: vehicles.length, servicesCount: services.length },
+          context: { vehicles, vehiclesCount: vehicles.length, servicesCount: services.length },
         }),
       });
 
@@ -105,12 +105,13 @@ export default function AIAssistant({ vehicles, services, expenses, reminders })
   const fallbackReply = (q) => {
     const lower = q.toLowerCase();
     let reply = "Regular maintenance is crucial for safety and resale value. Check your vehicle's manual or add a service reminder in VSRMS.";
+    const activeVehName = vehicles[0]?.name || 'your vehicle';
     if (lower.includes('oil')) {
-      reply = "For diesel engines like the Innova Crysta, synthetic oil should be changed every 10,000 km or 12 months with a fresh oil filter.";
+      reply = `For engines like ${activeVehName}, synthetic oil should be changed every 10,000 km or 12 months with a fresh OEM oil filter.`;
     } else if (lower.includes('tyre') || lower.includes('tire')) {
-      reply = "Rotate tyres every 8,000 to 10,000 km in a cross-pattern to promote even tread wear and avoid premature replacement.";
+      reply = `Rotate tyres every 8,000 to 10,000 km in a cross-pattern to promote even tread wear on ${activeVehName}.`;
     } else if (lower.includes('puc') || lower.includes('insurance')) {
-      reply = "PUC certificates must be renewed annually for BS-IV/VI vehicles. Insurance renewal before expiry protects your No Claim Bonus (NCB).";
+      reply = `PUC certificates must be renewed annually for BS-IV/VI vehicles like ${activeVehName}. Insurance renewal before expiry protects your No Claim Bonus (NCB).`;
     }
     setMessages((prev) => [
       ...prev,

@@ -149,7 +149,7 @@ export function AddServiceModal({ isOpen, onClose, onAdd, vehicles = [], default
     onAdd({
       ...formData,
       id: `srv-${Date.now()}`,
-      vehicle_name: selVeh?.name || 'Innova Crysta',
+      vehicle_name: selVeh?.name || vehicles[0]?.name || 'Vehicle',
     });
     onClose();
   };
@@ -268,7 +268,7 @@ export function AddExpenseModal({ isOpen, onClose, onAdd, vehicles = [], default
     onAdd({
       ...formData,
       id: `exp-${Date.now()}`,
-      vehicle_name: selVeh?.name || 'Innova Crysta',
+      vehicle_name: selVeh?.name || vehicles[0]?.name || 'Vehicle',
     });
     onClose();
   };
@@ -379,7 +379,7 @@ export function AddReminderModal({ isOpen, onClose, onAdd, vehicles = [], defaul
     onAdd({
       ...formData,
       id: `rem-${Date.now()}`,
-      vehicle_name: selVeh?.name || 'Innova Crysta',
+      vehicle_name: selVeh?.name || vehicles[0]?.name || 'Vehicle',
       status: 'Pending',
     });
     onClose();

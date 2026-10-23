@@ -94,7 +94,7 @@ export default function ServiceRecords({ services = [], vehicles = [], onAddServ
                   <td>{s.service_date}</td>
                   <td>
                     <span style={{ fontWeight: 600, color: '#93c5fd' }}>
-                      {s.vehicle_name || 'Innova Crysta'}
+                      {s.vehicle_name || (vehicles.find((v) => v.id === s.vehicle_id)?.name) || 'Vehicle'}
                     </span>
                   </td>
                   <td style={{ fontWeight: 600, color: '#fff' }}>{s.service_type}</td>

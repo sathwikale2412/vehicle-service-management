@@ -822,12 +822,16 @@ def ai_assistant():
                 "• **Air & Cabin AC Filter:** ₹800 – ₹1,600.\n"
                 "Check the **Expense Tracker** section to view your vehicle's cumulative cost breakdown."
             )
-        elif any(w in q for w in ['innova', 'accord', 'vehicle', 'car']):
-            reply = (
-                "**Registered Vehicles in Fleet:**\n"
-                "• **Toyota Innova Crysta (TS 07 AM 9009):** Diesel, 2020 model. Known for high reliability; timing chain inspection recommended at 150,000 km.\n"
-                "• **Honda Accord (TS 08 PQ 4219):** Diesel, 2021 model. Ensure synthetic low-ash engine oil is utilized to protect the turbocharger."
-            )
+        elif any(w in q for w in ['vehicle', 'car', 'fleet', 'scala', 'innova', 'accord']):
+            context_vehicles = context.get('vehicles', [])
+            if context_vehicles:
+                veh_lines = [f"• **{v.get('name', 'Vehicle')} ({v.get('reg_number', '')}):** {v.get('fuel_type', 'Diesel')}, {v.get('year', '')} model, {int(v.get('odometer_km', 0)):,} KM." for v in context_vehicles]
+                reply = "**Registered Vehicles in Fleet:**\n" + "\n".join(veh_lines)
+            else:
+                reply = (
+                    "**Registered Vehicles in Fleet:**\n"
+                    "• Navigate to the **My Vehicles** tab to view complete specifications and service schedules for your registered vehicles."
+                )
         else:
             reply = (
                 f"**VSRMS AI Diagnostic Insights for '{user_message}':**\n\n"

@@ -57,7 +57,10 @@ export default function Reminders({ reminders = [], vehicles = [], onAddReminder
                     {r.title}
                   </div>
                   <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                    {r.vehicle_name || 'Innova Crysta'} • Due: {r.due_date}
+                    <span style={{ color: '#93c5fd', fontWeight: 600 }}>
+                      {r.vehicle_name || (vehicles.find((v) => v.id === r.vehicle_id)?.name) || 'Vehicle'}
+                    </span>{' '}
+                    • Due: {r.due_date}
                   </div>
                 </div>
               </div>
